@@ -648,6 +648,8 @@ const char gcn64_usbHidReportDescriptor[] PROGMEM = {
    0xB1,0x03,                   //    Feature (Constant, Variable)
    0xC0,    //    End Collection
 0xC0,    //    End Collection
+
+
 };
 
 int getUsbHidReportDescriptor_size(void)

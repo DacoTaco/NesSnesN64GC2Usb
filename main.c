@@ -508,6 +508,16 @@ void transferGamepadReport(int id)
 	}
 }
 
+static void sleepsync(void)
+{
+	wdt_disable();
+	sleep_enable();
+	sleep_cpu();
+	sleep_disable();
+	_delay_us(100);
+	wdt_enable(WDTO_2S);
+}
+
 /* Poll the controller
  * Send reports
  */
@@ -551,12 +561,7 @@ static void controller_present_doTasks(char just_changed)
 			// once in a row (it happens, saw it on the scope. It was inserting
 			// a huge delay in the command I was sending to the controller)
 			//
-			wdt_disable();
-			sleep_enable();
-			sleep_cpu();
-			sleep_disable();
-			_delay_us(100);
-			wdt_enable(WDTO_2S);
+			sleepsync();
 
 			if (curGamepad->update()) {
 				error_count++;
@@ -619,8 +624,12 @@ Gamepad *tryDetectController(void)
 	else
 	{
 		transferGamepadReport(1); // We know they all have only one
-		_delay_ms(30);
+		//_delay_ms(30);
 		usbPoll();
+		if (SREG & 0x80) 
+		{
+			sleepsync();
+		}
 		char i = 0;
 		for (i=0;i <= 1;i++)
 		{
