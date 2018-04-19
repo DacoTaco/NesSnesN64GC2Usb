@@ -19,7 +19,7 @@ at this moment , due to size restraint on the ATMega8 , a switch is on PB0 to se
 in the future i will try to rewrite a part of the code hoping i can use them all at once to control 1 actual controller...
 else, ill have to switch to the ATMega168 which has 16KB flash instead of 8 that the ATMega8 has.
 
-[b]EDIT : [/b] the commit on 19/04/2018 should have this fixed. 2 resistors should be added and then it detects automatically, giving priority to (S)NES controller!
+**EDIT : the commit on 19/04/2018 should have this fixed. 2 resistors should be added and then it detects automatically, giving priority to (S)NES controller!**
 
 
 
