@@ -488,8 +488,8 @@ void transferGamepadReport(int id)
 	if (usbInterruptIsReady())
 	{
 		char len;
-		int xfer_len;
-		int j;
+		char xfer_len;
+		char j;
 
 		len = getGamepadReport(reportBuffer, id);
 
@@ -522,10 +522,10 @@ static void sleepsync(void)
  * Send reports
  */
 static void controller_present_doTasks(char just_changed)
-{{{
+{
 	char must_report = 0;
-	static int error_count = 0;
-	int i;
+	static char error_count = 0;
+	char i;
 
 	/* main event loop */
 	wdt_reset();
@@ -607,22 +607,20 @@ static void controller_present_doTasks(char just_changed)
 	if (error_count > 30) {
 		curGamepad = NULL;
 	}
-}}}
+}
 
 Gamepad *tryDetectController(void)
-{{{
+{
 	Gamepad *pad = NULL;
 
 	gamepadVibrate(0);
 
 	// this must be called at each 50 ms or less
 	usbPoll();
-	if(bit_is_set(PINB,0))
-	{
-		pad = fournsnesGetGamepad();
-	}
-	else
-	{
+
+	pad = fournsnesGetGamepad();
+	if(pad == NULL)
+	{	
 		transferGamepadReport(1); // We know they all have only one
 		//_delay_ms(30);
 		usbPoll();
@@ -685,12 +683,13 @@ Gamepad *tryDetectController(void)
 			}
 		}
 	}
+
 	if(pad != NULL)
 	{
 		pad->init();
 	}
 	return pad;
-}}}
+}
 
 int main(void)
 {
@@ -706,7 +705,7 @@ int main(void)
 	} while (pad == NULL);
 	curGamepad = pad;
 #else
-	int i = 60;
+	char i = 60;
 	do {
 		pad = tryDetectController();
 		if (pad) {
@@ -751,13 +750,12 @@ reconnect:
 	usbInit();
 	usbReset();
 	sei();
-	char mode_state = bit_is_clear(PINB,0);
 	while (1)
 	{
 		usbPoll();
 		wdt_reset();
 
-		if ((curGamepad == NULL ) || (bit_is_clear(PINB,0) != mode_state) )
+		if ((curGamepad == NULL ))
 		{
 			//either no controller detected or we changed mode... lets try to redetect controller !
 			pad = tryDetectController();
@@ -773,7 +771,6 @@ reconnect:
 			{
 				curGamepad = NULL;
 			}
-			mode_state = bit_is_clear(PINB,0);
 		}
 		
 		if (curGamepad != NULL) {

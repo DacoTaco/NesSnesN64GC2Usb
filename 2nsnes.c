@@ -84,7 +84,8 @@ static void fournsnesInit(void)
 	SNES_DATA_DDR &= ~(SNES_DATA_BIT1 | SNES_DATA_BIT2);
 	// enable pullup. This should prevent random toggling of pins
 	// when no controller is connected.
-	SNES_DATA_PORT |= (SNES_DATA_BIT1 | SNES_DATA_BIT2);
+	//NOTE BY DACOTACO : pull up disabled as we are using a 5.6k Ohms pull down resistor to force unconnected to read as 0xFF
+	//SNES_DATA_PORT |= (SNES_DATA_BIT1 | SNES_DATA_BIT2);
 
 	// clock is normally high
 	SNES_CLOCK_PORT |= SNES_CLOCK_BIT;
@@ -120,13 +121,15 @@ static void fournsnesInit(void)
 
 	SREG = sreg;
 }
-static char fournsnesUpdate(void)
+static char getState(char check_only)
 {
-	int i;
+	char i;
+	int pad1,pad2 = 0x0;
 	unsigned char tmp1=0;
 	unsigned char tmp2=0;
 	/*unsigned char tmp3=0;
 	unsigned char tmp4=0;*/
+	
 	{			
 		SNES_LATCH_HIGH();
 		_delay_us(12);
@@ -141,16 +144,31 @@ static char fournsnesUpdate(void)
 			tmp2 <<= 1;	
 			/*tmp3 <<= 1;	
 			tmp4 <<= 1;*/
-			if (!SNES_GET_DATA1()) { tmp1 |= 1; }
-			if (!SNES_GET_DATA2()) { tmp2 |= 1; }
+			if (!SNES_GET_DATA1()) 
+			{ 
+				tmp1 |= 1; 
+			}
+			if (!SNES_GET_DATA2()) 
+			{ 
+				tmp2 |= 1; 
+			}
 
 			_delay_us(6);
 			SNES_CLOCK_HIGH();
 		}
-		last_read_controller_bytes[0] = tmp1;
-		last_read_controller_bytes[2] = tmp2;
-		/*last_read_controller_bytes[4] = tmp3;
-		last_read_controller_bytes[6] = tmp4;*/
+		//assign value, saves space :V
+		pad1 = tmp1;
+		pad2 = tmp2;
+		
+		if(!check_only)
+		{
+			if(tmp1 != 0xFF)
+				last_read_controller_bytes[0] = tmp1;
+			if(tmp2 != 0xFF)
+				last_read_controller_bytes[2] = tmp2;
+			/*last_read_controller_bytes[4] = tmp3;
+			last_read_controller_bytes[6] = tmp4;*/
+		}
 
 		for (i=0; i<8; i++)
 		{
@@ -164,14 +182,31 @@ static char fournsnesUpdate(void)
 			tmp2 >>= 1;	
 			/*tmp3 >>= 1;	
 			tmp4 >>= 1;	*/
-			if (!SNES_GET_DATA1()) { tmp1 |= 0x80; }
-			if (!SNES_GET_DATA2()) { tmp2 |= 0x80; }
+			if (!SNES_GET_DATA1()) 
+			{ 
+				tmp1 |= 0x80; 
+			}
+			if (!SNES_GET_DATA2()) 
+			{ 
+				tmp2 |= 0x80; 
+			}
 			
 			_delay_us(6);
 			SNES_CLOCK_HIGH();
 		}
+		pad1 |= tmp1 << 8;
+		pad2 |= tmp2 << 8;
 	}
 
+	if(pad1 == 0xFFFF && pad2 == 0xFFFF)
+	{
+		return 1;
+	}	
+	
+	if(check_only)
+	{
+		return 0;
+	}
 
 	//if (live_autodetect) {	
 		if (tmp1==0xFF)
@@ -199,11 +234,17 @@ static char fournsnesUpdate(void)
 	/* Force extra bits to 0 when in NES mode. Otherwise, if
 	 * we read zeros on the wire, we will have permanantly 
 	 * pressed buttons */
-	last_read_controller_bytes[1] = (nesMode & 1) ? 0x00 : tmp1;
-	last_read_controller_bytes[3] = (nesMode & 2) ? 0x00 : tmp2;
+	if(pad1 != 0xFFFF)
+		last_read_controller_bytes[1] = (nesMode & 1) ? 0x00 : tmp1;
+	if(pad2 != 0xFFFF)
+		last_read_controller_bytes[3] = (nesMode & 2) ? 0x00 : tmp2;
 	/*last_read_controller_bytes[5] = (nesMode & 4) ? 0x00 : tmp3;
 	last_read_controller_bytes[7] = (nesMode & 8) ? 0x00 : tmp4;*/
 	return 0;
+}
+static char fournsnesUpdate(void)
+{
+	return getState(0);
 }
 
 static char fournsnesChanged(unsigned char report_id)
@@ -422,8 +463,17 @@ Gamepad SnesGamepad = {
 	.buildReport			= fournsnesBuildReport
 };
 
+char ControllerConnected()
+{
+	fournsnesInit();
+	return !getState(1);
+}
+
 Gamepad *fournsnesGetGamepad(void)
 {
-	return &SnesGamepad;
+	if(ControllerConnected())
+		return &SnesGamepad;
+	else
+		return NULL;
 }
 
