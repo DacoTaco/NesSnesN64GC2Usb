@@ -694,22 +694,19 @@ Gamepad *tryDetectController(void)
 int main(void)
 {
 	char just_detected = 1;
-	Gamepad *pad = NULL;
 
 	hardwareInit();
 	gcn64protocol_hwinit();
 
 #ifdef WAIT_FOR_PAD
 	do {
-		pad = tryDetectController();
-	} while (pad == NULL);
-	curGamepad = pad;
+		curGamepad = tryDetectController();
+	} while (curGamepad == NULL);
 #else
 	char i = 60;
 	do {
-		pad = tryDetectController();
-		if (pad) {
-			curGamepad = pad;
+		curGamepad = tryDetectController();
+		if (curGamepad) {
 			break;
 		}
 		_delay_ms(16);
@@ -755,15 +752,14 @@ reconnect:
 		usbPoll();
 		wdt_reset();
 
-		if ((curGamepad == NULL ))
+		if (curGamepad == NULL)
 		{
 			//either no controller detected or we changed mode... lets try to redetect controller !
-			pad = tryDetectController();
-			if (pad) {
-				curGamepad = pad;
+			curGamepad = tryDetectController();
+			if (curGamepad) {
 				just_detected = 1;
-
-				/*if (pad->reportDescriptor != rt_usbHidReportDescriptor) {
+				/*if (curGamepad->reportDescriptor != rt_usbHidReportDescriptor) 
+				{
 					goto reconnect;
 				}*/
 			}
