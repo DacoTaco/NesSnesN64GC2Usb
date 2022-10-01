@@ -194,7 +194,7 @@ static uchar    reportBuffer[10];    /* buffer for HID reports */
 /* ----------------------------- USB interface ----------------------------- */
 /* ------------------------------------------------------------------------- */
 
-
+#define USB_RESET_HOOK(resetStarts)     if(!resetStarts){usbReset();}
 usbMsgLen_t   usbFunctionDescriptor(struct usbRequest *rq)
 {
 	if ((rq->bmRequestType & USBRQ_TYPE_MASK) != USBRQ_TYPE_STANDARD)
