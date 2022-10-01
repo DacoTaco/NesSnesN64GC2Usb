@@ -287,71 +287,73 @@ usbMsgLen_t	usbFunctionSetup(uchar data[8])
 	usbRequest_t    *rq = (void *)data;
 
 	usbMsgPtr = reportBuffer;
-	if((rq->bmRequestType & USBRQ_TYPE_MASK) == USBRQ_TYPE_CLASS){    /* class request type */
-
+	/* class request type */
+	if((rq->bmRequestType & USBRQ_TYPE_MASK) == USBRQ_TYPE_CLASS)
+	{
 		switch(rq->bRequest)
 		{
 			case USBRQ_HID_GET_REPORT:
-				{
-					char error = 1;
+			{
+				char error = 1;
 
-					// USB 7.2.1 GET_report_request
-					//
-					// wValue high byte : report type
-					// wValue low byte : report id
+				// USB 7.2.1 GET_report_request
+				//
+				// wValue high byte : report type
+				// wValue low byte : report id
 #if 1
-					switch (rq->wValue.bytes[1]) // type
-					{
-						case 1: // input report
-							if (rq->wValue.bytes[0]) {
-								return getGamepadReport(reportBuffer, rq->wValue.bytes[0]);
-							}
-							if (rq->wValue.bytes[0] == 0x03) {
-								reportBuffer[0] = rq->wValue.bytes[0];
-								reportBuffer[1] = 1; // _FFB_effect_index;
-								// 1 : Block load success, 2 : Block load full (OOM), 3 : block load error
-								reportBuffer[2] = error;
-								reportBuffer[3] = 1;
-								reportBuffer[4] = 1;
-	//							gamepadVibrate(1);
-								return 5;
-							}
-
-							break;
-
-						case 2: // output report
-							break;
-
-						case 3: // feature report
-							if (rq->wValue.bytes[0] == PID_BLOCK_LOAD_REPORT) {
-//								gamepadVibrate(1);
-								reportBuffer[0] = rq->wValue.bytes[0];
-								reportBuffer[1] = 0x1;
-								reportBuffer[2] = 0x1;
-								reportBuffer[3] = 10;
-								reportBuffer[4] = 10;
-								return 5;
-							}
-							else if (rq->wValue.bytes[0] == PID_SIMULTANEOUS_MAX) {
-								reportBuffer[0] = rq->wValue.bytes[0];
-								reportBuffer[1] = 1;
-								reportBuffer[2] = 1;
-								reportBuffer[3] = 0xff;
-								reportBuffer[4] = 1;
-								return 5;
-							}
-							break;
-					}
-#endif
-				}
-
-			case USBRQ_HID_SET_REPORT:
+				switch (rq->wValue.bytes[1]) // type
 				{
-					return USB_NO_MSG;
+					case 1: // input report
+						if (rq->wValue.bytes[0]) {
+							return getGamepadReport(reportBuffer, rq->wValue.bytes[0]);
+						}
+						if (rq->wValue.bytes[0] == 0x03) {
+							reportBuffer[0] = rq->wValue.bytes[0];
+							reportBuffer[1] = 1; // _FFB_effect_index;
+							// 1 : Block load success, 2 : Block load full (OOM), 3 : block load error
+							reportBuffer[2] = error;
+							reportBuffer[3] = 1;
+							reportBuffer[4] = 1;
+//							gamepadVibrate(1);
+							return 5;
+						}
+
+						break;
+
+					case 2: // output report
+						break;
+
+					case 3: // feature report
+						if (rq->wValue.bytes[0] == PID_BLOCK_LOAD_REPORT) {
+//								gamepadVibrate(1);
+							reportBuffer[0] = rq->wValue.bytes[0];
+							reportBuffer[1] = 0x1;
+							reportBuffer[2] = 0x1;
+							reportBuffer[3] = 10;
+							reportBuffer[4] = 10;
+							return 5;
+						}
+						else if (rq->wValue.bytes[0] == PID_SIMULTANEOUS_MAX) {
+							reportBuffer[0] = rq->wValue.bytes[0];
+							reportBuffer[1] = 1;
+							reportBuffer[2] = 1;
+							reportBuffer[3] = 0xff;
+							reportBuffer[4] = 1;
+							return 5;
+						}
+						break;
 				}
+#endif
+			}
+			case USBRQ_HID_SET_REPORT:
+			{
+				return USB_NO_MSG;
+			}
 		}
-	}else{
-	/* no vendor specific requests implemented */
+	}
+	else
+	{
+		/* no vendor specific requests implemented */
 	}
 	return 0;
 }
@@ -541,8 +543,7 @@ static void controller_present_doTasks(char just_changed)
 	/* Poll the controller at the configured speed */
 	if (mustPollControllers())
 	{
-		clrPollControllers();
-		
+		clrPollControllers();		
 		if (!must_report)
 		{
 			decideVibration();
@@ -576,14 +577,12 @@ static void controller_present_doTasks(char just_changed)
 				}
 			}
 		}
-
 	}
 
 	if (mustRunEffectLoop()) 
 	{
 		clrRunEffectLoop();
 		effect_loop();
-
 	}
 
 	if(must_report)
@@ -593,7 +592,6 @@ static void controller_present_doTasks(char just_changed)
 		{
 			if ((must_report & (1<<i)) == 0)
 				continue;
-
 
 			transferGamepadReport(i+1);
 		}
@@ -741,16 +739,14 @@ reconnect:
 	my_usbDescriptorConfiguration[25] = rt_usbHidReportDescriptorSize;
 	my_usbDescriptorConfiguration[26] = rt_usbHidReportDescriptorSize >> 8;
 
-	// Do hardwareInit again. It causes a USB reset.
-
 	wdt_enable(WDTO_2S);
 	usbInit();
 	usbReset();
 	sei();
 	while (1)
 	{
-		usbPoll();
 		wdt_reset();
+		usbPoll();
 
 		if (curGamepad == NULL)
 		{
